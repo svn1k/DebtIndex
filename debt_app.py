@@ -255,7 +255,9 @@ Rules:
 
 @app.route("/")
 def index():
-    return send_from_directory('.', 'index.html')
+    # Get the absolute path to the directory containing this python file
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    return send_from_directory(base_dir, 'index.html')
 
 @app.route("/health")
 def health():
