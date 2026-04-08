@@ -4,276 +4,997 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DebtZero — AI Debt Strategy</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#080c0f;
-  --bg2:#0d1317;
-  --card:#111820;
-  --card2:#162030;
-  --border:rgba(0,255,136,0.08);
-  --border2:rgba(0,255,136,0.18);
-  --text:#e8f5ee;
-  --text2:#6b8f7a;
-  --text3:#2a4a38;
-  --green:#00ff88;
-  --green2:#00cc6a;
-  --red:#ff4060;
-  --yellow:#ffcc00;
-  --blue:#00aaff;
-  --glow:rgba(0,255,136,0.12);
-  --shadow:0 2px 20px rgba(0,0,0,0.6);
+  --cream:#f5f0e8;
+  --paper:#ede7d9;
+  --paper2:#e0d8c8;
+  --ink:#1a1410;
+  --ink2:#3d3529;
+  --ink3:#7a6f61;
+  --ink4:#b5a99a;
+  --ochre:#c8860a;
+  --ochre2:#e09a12;
+  --red:#c0392b;
+  --red2:#e74c3c;
+  --teal:#1a6b6b;
+  --teal2:#258b8b;
+  --border:#1a1410;
+  --border-light:rgba(26,20,16,0.15);
+  --shadow:4px 4px 0 var(--ink);
+  --shadow-sm:2px 2px 0 var(--ink);
 }
-html,body{height:100%;font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
 
-/* ── Grid bg ── */
+html,body{
+  height:100%;
+  font-family:'Space Mono',monospace;
+  background:var(--cream);
+  color:var(--ink);
+  overflow-x:hidden;
+}
+
+/* ── Noise texture overlay ── */
 body::before{
-  content:'';position:fixed;inset:0;z-index:0;
-  background-image:linear-gradient(rgba(0,255,136,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,0.03) 1px,transparent 1px);
-  background-size:40px 40px;pointer-events:none
+  content:'';
+  position:fixed;inset:0;z-index:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  background-size:200px;
+  pointer-events:none;
+  opacity:.6;
 }
 
 /* ── Layout ── */
 .shell{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}
-header{padding:1.5rem 3rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
-.logo{font-size:1.4rem;font-weight:800;letter-spacing:-.03em}
-.logo span{color:var(--green)}
-.logo-sub{font-family:'DM Mono',monospace;font-size:.55rem;color:var(--text3);letter-spacing:.15em;text-transform:uppercase;margin-top:2px}
-.og-badge{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--text3);letter-spacing:.1em;display:flex;align-items:center;gap:.4rem}
-.og-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
 
-main{flex:1;padding:3rem;max-width:1300px;margin:0 auto;width:100%}
+/* ── Page body with sidebars ── */
+.page-body{flex:1;display:grid;grid-template-columns:200px 1fr 200px;min-height:0}
 
-/* ── Panels ── */
-.vp{display:flex;transition:transform .5s cubic-bezier(.77,0,.18,1)}
+/* ── Sidebars ── */
+.sidebar{
+  border-right:2px solid var(--border-light);
+  overflow:hidden;
+  position:relative;
+  background:var(--paper);
+  display:flex;
+  flex-direction:column;
+}
+.sidebar-right{border-right:none;border-left:2px solid var(--border-light)}
+
+.sidebar-header{
+  background:var(--ink);
+  color:var(--cream);
+  padding:.45rem .85rem;
+  font-size:.5rem;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  flex-shrink:0;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+/* Ticker tape scroll */
+.ticker-wrap{
+  flex:1;
+  overflow:hidden;
+  position:relative;
+}
+.ticker-inner{
+  position:absolute;
+  top:0;left:0;right:0;
+  animation:tickerScroll 38s linear infinite;
+}
+.ticker-inner:hover{animation-play-state:paused}
+@keyframes tickerScroll{
+  0%{transform:translateY(0)}
+  100%{transform:translateY(-50%)}
+}
+
+.ticker-item{
+  padding:.6rem .85rem;
+  border-bottom:1px solid var(--border-light);
+  font-size:.58rem;
+  line-height:1.35;
+}
+.ticker-label{
+  font-size:.48rem;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--ink3);
+  margin-bottom:.2rem;
+}
+.ticker-val{
+  font-size:.85rem;
+  font-weight:700;
+  font-family:'Playfair Display',serif;
+  line-height:1;
+}
+.ticker-change{
+  font-size:.5rem;
+  margin-top:.15rem;
+  letter-spacing:.05em;
+}
+.up{color:var(--teal)}
+.dn{color:var(--red)}
+
+/* Sparkline mini chart */
+.spark-row{display:flex;align-items:center;gap:.4rem;margin-top:.3rem}
+.spark{width:100%;height:22px}
+
+/* Rate meter */
+.rate-meter{
+  padding:.7rem .85rem;
+  border-bottom:1px solid var(--border-light);
+}
+.meter-bar{
+  height:4px;
+  background:var(--border-light);
+  margin-top:.35rem;
+  position:relative;
+  overflow:hidden;
+}
+.meter-fill{
+  height:100%;
+  background:var(--ochre);
+  border-radius:0;
+  transition:width 1.5s ease;
+}
+
+/* Quote block */
+.sidebar-quote{
+  padding:.8rem .85rem;
+  border-bottom:1px solid var(--border-light);
+  font-family:'Playfair Display',serif;
+  font-size:.72rem;
+  font-style:italic;
+  color:var(--ink2);
+  line-height:1.5;
+  border-left:3px solid var(--ochre);
+  margin:.5rem .5rem 0;
+}
+.quote-attr{
+  font-family:'Space Mono',monospace;
+  font-style:normal;
+  font-size:.48rem;
+  color:var(--ink3);
+  letter-spacing:.1em;
+  margin-top:.35rem;
+  text-transform:uppercase;
+}
+
+/* Animated counter blocks */
+.counter-block{
+  padding:.65rem .85rem;
+  border-bottom:1px solid var(--border-light);
+}
+.counter-num{
+  font-family:'Playfair Display',serif;
+  font-size:1.3rem;
+  font-weight:900;
+  color:var(--ochre);
+  line-height:1;
+  animation:countPulse 3s ease-in-out infinite;
+}
+@keyframes countPulse{
+  0%,100%{opacity:1}
+  50%{opacity:.65}
+}
+.counter-lbl{
+  font-size:.48rem;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--ink3);
+  margin-top:.2rem;
+}
+
+/* Strategy wisdom items */
+.wisdom-item{
+  padding:.65rem .85rem;
+  border-bottom:1px solid var(--border-light);
+  font-size:.6rem;
+  line-height:1.55;
+  color:var(--ink2);
+}
+.wisdom-icon{
+  font-size:.75rem;
+  display:block;
+  margin-bottom:.25rem;
+}
+
+/* Fact tape */
+.fact-tape{
+  padding:.6rem .85rem;
+  border-bottom:1px solid var(--border-light);
+}
+.fact-num{
+  font-family:'Playfair Display',serif;
+  font-size:1.5rem;
+  font-weight:900;
+  font-style:italic;
+  color:var(--ink);
+  line-height:1;
+}
+.fact-txt{
+  font-size:.52rem;
+  color:var(--ink3);
+  letter-spacing:.06em;
+  line-height:1.4;
+  margin-top:.15rem;
+}
+
+/* Blinking cursor ornament */
+.blink{animation:blink .9s step-end infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+@media(max-width:1100px){
+  .page-body{grid-template-columns:160px 1fr 160px}
+}
+@media(max-width:860px){
+  .page-body{grid-template-columns:1fr}
+  .sidebar{display:none}
+}
+
+/* ── Header ── */
+header{
+  padding:0;
+  border-bottom:3px solid var(--ink);
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:stretch;
+}
+.header-brand{
+  padding:1.25rem 2.5rem;
+  border-right:3px solid var(--ink);
+}
+.logo{
+  font-family:'Playfair Display',serif;
+  font-size:2rem;
+  font-weight:900;
+  line-height:1;
+  letter-spacing:-.04em;
+  color:var(--ink);
+}
+.logo em{
+  font-style:italic;
+  color:var(--ochre);
+}
+.logo-tagline{
+  font-size:.52rem;
+  color:var(--ink3);
+  letter-spacing:.25em;
+  text-transform:uppercase;
+  margin-top:.3rem;
+}
+.header-meta{
+  display:flex;
+  align-items:center;
+  padding:.75rem 2rem;
+  gap:2rem;
+}
+.og-badge{
+  font-size:.55rem;
+  color:var(--ink3);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  display:flex;
+  align-items:center;
+  gap:.5rem;
+}
+.og-dot{
+  width:6px;height:6px;
+  border-radius:50%;
+  background:var(--teal);
+  animation:pulse 2.5s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)}}
+
+/* ── Issue bar ── */
+.issue-bar{
+  background:var(--ink);
+  color:var(--cream);
+  padding:.4rem 2.5rem;
+  font-size:.55rem;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  display:flex;
+  gap:3rem;
+  align-items:center;
+}
+.issue-bar span{opacity:.45}
+
+/* ── Main ── */
+main{flex:1;padding:2.5rem;min-width:0;overflow:hidden}
+
+/* ── Slide viewport ── */
+.vp{display:flex;transition:transform .55s cubic-bezier(.77,0,.18,1);overflow:hidden}
 .vp.s0{transform:translateX(0)}
 .vp.s1{transform:translateX(-100%)}
-.panel{width:100%;flex-shrink:0}
+.panel{width:100%;flex-shrink:0;min-width:0}
 
-/* ── Step 0: Input ── */
-.input-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:2rem}
-.section-label{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--green);letter-spacing:.2em;text-transform:uppercase;margin-bottom:1.25rem;display:flex;align-items:center;gap:.75rem}
-.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+/* ── Intro heading ── */
+.hero{margin-bottom:2.5rem;padding-bottom:2.5rem;border-bottom:2px solid var(--border-light)}
+.hero h1{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(2.4rem,5vw,4rem);
+  font-weight:900;
+  line-height:1.0;
+  letter-spacing:-.04em;
+  max-width:600px;
+}
+.hero h1 em{
+  font-style:italic;
+  color:var(--ochre);
+  display:block;
+}
+.hero-sub{
+  margin-top:.9rem;
+  font-size:.7rem;
+  color:var(--ink3);
+  line-height:1.8;
+  max-width:520px;
+}
 
-.income-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:2rem}
-.field{display:flex;flex-direction:column;gap:.4rem}
-.field label{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text2);letter-spacing:.1em;text-transform:uppercase}
-.field input,.field select{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:.85rem;padding:.65rem 1rem;outline:none;transition:border-color .15s;width:100%}
-.field input:focus,.field select:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--glow)}
-.field input::placeholder{color:var(--text3)}
-.field select option{background:#111}
+/* ── Section label ── */
+.section-label{
+  font-size:.55rem;
+  letter-spacing:.25em;
+  text-transform:uppercase;
+  color:var(--ink3);
+  margin-bottom:1rem;
+  display:flex;
+  align-items:center;
+  gap:.75rem;
+}
+.section-label::before{
+  content:'';
+  display:inline-block;
+  width:20px;height:2px;
+  background:var(--ochre);
+  flex-shrink:0;
+}
 
-/* ── Debt cards ── */
-.debt-list{display:flex;flex-direction:column;gap:.75rem;margin-bottom:1rem}
-.debt-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem 1.25rem;display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:.75rem;align-items:center;animation:slideIn .2s ease}
-@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-.debt-card .field input{padding:.5rem .75rem;font-size:.78rem}
-.debt-rm{background:none;border:none;color:var(--text3);cursor:pointer;font-size:1.1rem;padding:.25rem;transition:color .15s;line-height:1}
-.debt-rm:hover{color:var(--red)}
-.add-debt{background:none;border:1px dashed var(--border2);border-radius:10px;color:var(--green);font-family:'DM Mono',monospace;font-size:.72rem;letter-spacing:.1em;padding:.75rem;width:100%;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:.5rem}
-.add-debt:hover{background:var(--glow);border-color:var(--green)}
+/* ── Input grid ── */
+.input-layout{display:grid;grid-template-columns:5fr 4fr;gap:2.5rem;align-items:start}
+.left-col{}
+.right-col{}
+
+/* ── Finance inputs ── */
+.finance-box{
+  border:2px solid var(--ink);
+  background:var(--paper);
+  margin-bottom:2rem;
+  box-shadow:var(--shadow);
+}
+.finance-box-header{
+  background:var(--ink);
+  color:var(--cream);
+  padding:.55rem 1.25rem;
+  font-size:.55rem;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+}
+.finance-box-body{padding:1.25rem;display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+
+.field{display:flex;flex-direction:column;gap:.35rem}
+.field label{
+  font-size:.55rem;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  color:var(--ink3);
+}
+.field input,.field select{
+  background:var(--cream);
+  border:2px solid var(--ink);
+  color:var(--ink);
+  font-family:'Space Mono',monospace;
+  font-size:.82rem;
+  padding:.6rem .9rem;
+  outline:none;
+  transition:box-shadow .1s,transform .1s;
+  width:100%;
+  -webkit-appearance:none;
+  appearance:none;
+}
+.field input:focus,.field select:focus{
+  box-shadow:var(--shadow-sm);
+  transform:translate(-1px,-1px);
+}
+.field input::placeholder{color:var(--ink4)}
+.field select option{background:var(--cream)}
 
 /* ── Goal selector ── */
-.goal-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-bottom:2rem}
-.goal-btn{padding:.9rem;border:1px solid var(--border);border-radius:10px;background:rgba(0,0,0,.2);cursor:pointer;text-align:left;transition:all .18s}
-.goal-btn:hover{border-color:var(--border2)}
-.goal-btn.on{border-color:var(--green);background:var(--glow)}
-.goal-icon{font-size:1.3rem;display:block;margin-bottom:.35rem}
-.goal-name{font-size:.82rem;font-weight:600;color:var(--text);display:block}
-.goal-desc{font-size:.62rem;color:var(--text3);font-family:'DM Mono',monospace;margin-top:.2rem;display:block}
+.goal-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem;margin-bottom:1.5rem}
+.goal-btn{
+  padding:.9rem .75rem;
+  border:2px solid var(--ink);
+  background:var(--cream);
+  cursor:pointer;
+  text-align:left;
+  transition:all .1s;
+  box-shadow:none;
+  position:relative;
+}
+.goal-btn:hover{transform:translate(-1px,-1px);box-shadow:var(--shadow-sm)}
+.goal-btn.on{
+  background:var(--ink);
+  color:var(--cream);
+  transform:translate(-2px,-2px);
+  box-shadow:var(--shadow);
+}
+.goal-btn.on .goal-name{color:var(--ochre2)}
+.goal-btn.on .goal-desc{color:var(--ink4)}
+.goal-icon{font-size:1.2rem;display:block;margin-bottom:.4rem}
+.goal-name{font-family:'Playfair Display',serif;font-size:.88rem;font-weight:700;color:var(--ink);display:block;line-height:1.1}
+.goal-desc{font-size:.55rem;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-top:.3rem;display:block}
+
+/* ── Debt list ── */
+.debt-list{display:flex;flex-direction:column;gap:.6rem;margin-bottom:.75rem}
+.debt-card{
+  background:var(--paper);
+  border:2px solid var(--ink);
+  padding:1rem 1.1rem;
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr 1fr auto;
+  gap:.6rem;
+  align-items:end;
+  box-shadow:var(--shadow-sm);
+  animation:slideIn .18s ease;
+  position:relative;
+}
+.debt-card::before{
+  content:attr(data-n);
+  position:absolute;
+  top:-11px;left:12px;
+  background:var(--ochre);
+  color:#fff;
+  font-size:.5rem;
+  padding:2px 7px;
+  letter-spacing:.1em;
+}
+@keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.debt-card .field input{padding:.45rem .7rem;font-size:.75rem}
+.debt-rm{
+  background:none;
+  border:2px solid var(--border-light);
+  color:var(--ink3);
+  cursor:pointer;
+  font-size:.8rem;
+  padding:.4rem .55rem;
+  transition:all .1s;
+  line-height:1;
+  font-family:'Space Mono',monospace;
+  height:36px;
+  align-self:end;
+}
+.debt-rm:hover{background:var(--red);border-color:var(--red);color:#fff}
+
+.add-debt{
+  background:none;
+  border:2px dashed var(--ink);
+  color:var(--ink3);
+  font-family:'Space Mono',monospace;
+  font-size:.65rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  padding:.65rem 1rem;
+  width:100%;
+  cursor:pointer;
+  transition:all .1s;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:.6rem;
+}
+.add-debt:hover{background:var(--paper2);color:var(--ink);border-style:solid;transform:translate(-1px,-1px);box-shadow:var(--shadow-sm)}
 
 /* ── CTA ── */
-.cta-row{display:flex;justify-content:flex-end;gap:1rem;margin-top:2rem}
-.btn-analyze{background:linear-gradient(135deg,var(--green2),var(--green));border:none;border-radius:10px;color:#000;font-family:'Syne',sans-serif;font-size:.88rem;font-weight:700;padding:.85rem 2.5rem;cursor:pointer;display:flex;align-items:center;gap:.6rem;transition:all .2s;letter-spacing:.02em}
-.btn-analyze:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,255,136,.25)}
-.btn-analyze:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.cta-row{
+  display:flex;
+  justify-content:flex-end;
+  gap:1rem;
+  margin-top:2rem;
+  padding-top:2rem;
+  border-top:2px solid var(--border-light);
+}
+.btn-analyze{
+  background:var(--ochre);
+  border:2px solid var(--ink);
+  color:var(--cream);
+  font-family:'Playfair Display',serif;
+  font-size:1rem;
+  font-weight:700;
+  font-style:italic;
+  padding:.75rem 2.5rem;
+  cursor:pointer;
+  transition:all .1s;
+  letter-spacing:.01em;
+  display:flex;
+  align-items:center;
+  gap:.75rem;
+  box-shadow:var(--shadow);
+}
+.btn-analyze:hover:not(:disabled){
+  background:var(--ochre2);
+  transform:translate(-2px,-2px);
+  box-shadow:6px 6px 0 var(--ink);
+}
+.btn-analyze:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-analyze .arrow{font-style:normal;font-size:1.2rem}
 
-/* ── Loading ── */
-.loading-ov{position:fixed;inset:0;z-index:100;background:rgba(8,12,15,.92);backdrop-filter:blur(8px);display:none;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem}
+/* ── Loading overlay ── */
+.loading-ov{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(245,240,232,.96);
+  backdrop-filter:blur(4px);
+  display:none;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:2rem;
+}
 .loading-ov.vis{display:flex}
-.loading-ring{width:60px;height:60px;border:2px solid var(--border2);border-top-color:var(--green);border-radius:50%;animation:spin 1s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.loading-steps{display:flex;flex-direction:column;gap:.5rem;align-items:center}
-.loading-step{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text3);transition:color .3s}
-.loading-step.active{color:var(--green)}
-.loading-step.done{color:var(--text2)}
+.loading-graphic{
+  width:80px;height:80px;
+  border:3px solid var(--ink);
+  position:relative;
+  animation:bruteSpin 2s linear infinite;
+}
+.loading-graphic::after{
+  content:'$';
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Playfair Display',serif;
+  font-size:2rem;
+  font-weight:900;
+  color:var(--ochre);
+  animation:bruteSpin 2s linear infinite reverse;
+}
+@keyframes bruteSpin{to{transform:rotate(360deg)}}
+.loading-title{
+  font-family:'Playfair Display',serif;
+  font-size:1.5rem;
+  font-weight:900;
+  font-style:italic;
+}
+.loading-steps{display:flex;flex-direction:column;gap:.4rem;text-align:center}
+.loading-step{
+  font-size:.62rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--ink4);
+  transition:color .3s;
+}
+.loading-step.active{color:var(--ink);font-weight:700}
+.loading-step.done{color:var(--ink3)}
+.loading-step.done::before{content:'✓ '}
 
 /* ── Results ── */
-.results-header{margin-bottom:2rem}
-.results-title{font-size:1.8rem;font-weight:800;letter-spacing:-.03em;margin-bottom:.4rem}
-.results-sub{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--text2);letter-spacing:.08em}
+.results-header{
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:start;
+  margin-bottom:2rem;
+  padding-bottom:2rem;
+  border-bottom:3px solid var(--ink);
+  gap:2rem;
+}
+.results-headline{
+  font-family:'Playfair Display',serif;
+  font-size:clamp(2rem,4vw,3rem);
+  font-weight:900;
+  line-height:1;
+  letter-spacing:-.03em;
+}
+.results-headline em{font-style:italic;color:var(--ochre)}
+.results-meta{
+  font-size:.58rem;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  color:var(--ink3);
+  margin-top:.4rem;
+}
+.back-btn{
+  background:none;
+  border:2px solid var(--ink);
+  color:var(--ink);
+  font-family:'Space Mono',monospace;
+  font-size:.6rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  padding:.55rem 1.1rem;
+  cursor:pointer;
+  transition:all .1s;
+  white-space:nowrap;
+}
+.back-btn:hover{background:var(--ink);color:var(--cream);box-shadow:var(--shadow-sm);transform:translate(-1px,-1px)}
 
-.metrics-row{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:2rem}
-.metric{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;position:relative;overflow:hidden}
-.metric::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);opacity:0;transition:opacity .3s}
-.metric.in::before{opacity:1}
-.metric-val{font-family:'DM Mono',monospace;font-size:1.5rem;font-weight:500;margin-bottom:.3rem}
-.metric-val.green{color:var(--green)}
+/* ── Metrics strip ── */
+.metrics-strip{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  border:2px solid var(--ink);
+  margin-bottom:2rem;
+  box-shadow:var(--shadow);
+}
+.metric{
+  padding:1.25rem 1rem;
+  border-right:2px solid var(--ink);
+  position:relative;
+  overflow:hidden;
+  transition:background .2s;
+}
+.metric:last-child{border-right:none}
+.metric.in{background:var(--paper)}
+.metric-val{
+  font-family:'Playfair Display',serif;
+  font-size:1.6rem;
+  font-weight:900;
+  line-height:1;
+  margin-bottom:.35rem;
+}
+.metric-val.ochre{color:var(--ochre)}
 .metric-val.red{color:var(--red)}
-.metric-val.yellow{color:var(--yellow)}
-.metric-label{font-size:.62rem;color:var(--text2);font-family:'DM Mono',monospace;letter-spacing:.08em;text-transform:uppercase}
+.metric-val.teal{color:var(--teal)}
+.metric-label{
+  font-size:.52rem;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--ink3);
+}
+.metric-accent{
+  position:absolute;
+  bottom:0;left:0;right:0;
+  height:3px;
+  background:var(--ochre);
+  transform:scaleX(0);
+  transform-origin:left;
+  transition:transform .6s ease;
+}
+.metric.in .metric-accent{transform:scaleX(1)}
 
+/* ── Results grid ── */
 .results-body{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
 .results-full{grid-column:1/-1}
 
+/* ── Cards ── */
+.card{
+  border:2px solid var(--ink);
+  background:var(--paper);
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+.card-header{
+  background:var(--ink);
+  color:var(--cream);
+  padding:.55rem 1.25rem;
+  font-size:.55rem;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.card-body{padding:1.25rem}
+
 /* ── Chart ── */
-.chart-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem}
-.chart-title{font-size:.8rem;font-weight:600;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between}
-.chart-legend{display:flex;gap:1rem}
-.legend-item{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--text2);display:flex;align-items:center;gap:.35rem}
-.legend-dot{width:8px;height:8px;border-radius:50%}
-canvas{width:100%;height:180px}
+canvas{width:100%;height:200px;display:block}
 
-/* ── Debt priority list ── */
-.priority-list{display:flex;flex-direction:column;gap:.6rem}
-.priority-item{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;display:grid;grid-template-columns:auto 1fr auto;gap:1rem;align-items:center;cursor:pointer;transition:all .15s}
-.priority-item:hover{border-color:var(--border2)}
-.priority-num{font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:500;color:var(--green);width:28px;text-align:center}
-.priority-info .pi-name{font-size:.88rem;font-weight:600;margin-bottom:.2rem}
-.priority-info .pi-meta{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--text2)}
-.priority-right{text-align:right}
-.priority-right .pr-payoff{font-family:'DM Mono',monospace;font-size:.85rem;color:var(--green);margin-bottom:.2rem}
-.priority-right .pr-interest{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--red)}
-.progress-bar{height:3px;background:rgba(0,255,136,.1);border-radius:2px;margin-top:.5rem;overflow:hidden;grid-column:1/-1}
-.progress-fill{height:100%;background:linear-gradient(90deg,var(--green2),var(--green));border-radius:2px;transition:width 1s ease}
+/* ── Priority list ── */
+.priority-list{display:flex;flex-direction:column;gap:.5rem}
+.priority-item{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  gap:.75rem;
+  align-items:center;
+  padding:.9rem 1rem;
+  border:1px solid var(--border-light);
+  background:var(--cream);
+  cursor:pointer;
+  transition:all .1s;
+  position:relative;
+}
+.priority-item:hover{background:var(--paper2);border-color:var(--ink);transform:translate(-1px,-1px);box-shadow:var(--shadow-sm)}
+.priority-num{
+  font-family:'Playfair Display',serif;
+  font-size:1.4rem;
+  font-weight:900;
+  font-style:italic;
+  color:var(--ochre);
+  width:32px;
+  text-align:center;
+  line-height:1;
+}
+.pi-name{font-size:.82rem;font-weight:700;margin-bottom:.2rem;font-family:'Playfair Display',serif}
+.pi-meta{font-size:.6rem;color:var(--ink3);letter-spacing:.04em}
+.pr-payoff{font-size:.8rem;font-weight:700;color:var(--teal);text-align:right;margin-bottom:.15rem}
+.pr-interest{font-size:.58rem;color:var(--red);text-align:right}
+.progress-bar{
+  grid-column:1/-1;
+  height:2px;
+  background:var(--border-light);
+}
+.progress-fill{
+  height:100%;
+  background:linear-gradient(90deg,var(--ochre),var(--ochre2));
+  transition:width 1.2s cubic-bezier(.77,0,.18,1);
+}
 
-/* ── Strategy compare ── */
-.compare-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem}
-.compare-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
-.compare-col{background:rgba(0,0,0,.3);border-radius:10px;padding:1rem;border:1px solid var(--border)}
-.compare-col.winner{border-color:var(--green);background:var(--glow)}
-.compare-col-title{font-size:.75rem;font-weight:700;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem}
-.winner-badge{background:var(--green);color:#000;font-family:'DM Mono',monospace;font-size:.5rem;padding:2px 6px;border-radius:4px;letter-spacing:.05em}
-.compare-stat{display:flex;justify-content:space-between;margin-bottom:.4rem}
-.compare-stat-label{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text2)}
-.compare-stat-val{font-family:'DM Mono',monospace;font-size:.7rem;font-weight:500}
+/* ── Compare ── */
+.compare-cols{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.compare-col{
+  border:2px solid var(--border-light);
+  padding:1rem;
+  position:relative;
+}
+.compare-col.winner{
+  border-color:var(--ochre);
+  background:rgba(200,134,10,.05);
+}
+.compare-col-title{
+  font-family:'Playfair Display',serif;
+  font-size:.95rem;
+  font-weight:700;
+  font-style:italic;
+  margin-bottom:.75rem;
+  display:flex;
+  align-items:center;
+  gap:.5rem;
+}
+.winner-badge{
+  background:var(--ochre);
+  color:#fff;
+  font-family:'Space Mono',monospace;
+  font-size:.48rem;
+  padding:2px 7px;
+  letter-spacing:.08em;
+  font-style:normal;
+}
+.compare-stat{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  padding:.3rem 0;
+  border-bottom:1px solid var(--border-light);
+  gap:.5rem;
+}
+.compare-stat:last-child{border:none}
+.compare-stat-label{font-size:.58rem;color:var(--ink3);letter-spacing:.06em}
+.compare-stat-val{font-size:.75rem;font-weight:700}
+.strategy-reason{
+  font-size:.68rem;
+  color:var(--ink2);
+  line-height:1.75;
+  margin-top:.75rem;
+  padding-top:.75rem;
+  border-top:1px solid var(--border-light);
+}
 
 /* ── Tips ── */
 .tips-list{display:flex;flex-direction:column;gap:.5rem}
-.tip-item{display:flex;gap:.75rem;align-items:flex-start;padding:.6rem .9rem;background:rgba(0,255,136,.03);border:1px solid var(--border);border-radius:8px;font-size:.75rem;color:var(--text2);line-height:1.55}
-.tip-icon{color:var(--green);font-size:.8rem;flex-shrink:0;margin-top:1px}
+.tip-item{
+  display:flex;
+  gap:.9rem;
+  align-items:flex-start;
+  padding:.7rem 1rem;
+  background:var(--cream);
+  border-left:3px solid var(--ochre);
+  font-size:.7rem;
+  color:var(--ink2);
+  line-height:1.65;
+}
+.tip-num{
+  font-family:'Playfair Display',serif;
+  font-size:.9rem;
+  font-weight:900;
+  font-style:italic;
+  color:var(--ochre);
+  flex-shrink:0;
+  line-height:1.2;
+}
 
-/* ── Proof ── */
-.proof-link{display:inline-flex;align-items:center;gap:.5rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--green);text-decoration:none;padding:.4rem .8rem;border:1px solid var(--border2);border-radius:6px;margin-top:1rem;transition:all .15s}
-.proof-link:hover{background:var(--glow)}
+/* ── Proof link ── */
+.proof-link{
+  display:inline-flex;
+  align-items:center;
+  gap:.5rem;
+  font-size:.58rem;
+  color:var(--teal);
+  text-decoration:none;
+  border:1px solid var(--teal);
+  padding:.35rem .8rem;
+  margin-top:.75rem;
+  letter-spacing:.06em;
+  transition:all .1s;
+}
+.proof-link:hover{background:var(--teal);color:#fff}
 
-.back-btn{background:none;border:1px solid var(--border);border-radius:8px;color:var(--text2);font-family:'DM Mono',monospace;font-size:.65rem;padding:.5rem 1rem;cursor:pointer;display:flex;align-items:center;gap:.4rem;transition:all .15s;letter-spacing:.05em}
-.back-btn:hover{border-color:var(--border2);color:var(--text)}
+/* ── Error ── */
+.error-msg{
+  text-align:center;
+  padding:4rem 2rem;
+  color:var(--red);
+  font-size:.78rem;
+  line-height:1.8;
+}
+.error-msg strong{
+  display:block;
+  font-family:'Playfair Display',serif;
+  font-size:2rem;
+  font-style:italic;
+  margin-bottom:.5rem;
+}
 
-.error-msg{text-align:center;padding:3rem;color:var(--red);font-family:'DM Mono',monospace;font-size:.8rem}
+/* ── Footer ── */
+.footer-strip{
+  border-top:2px solid var(--ink);
+  background:var(--ink);
+  color:var(--cream);
+  padding:.6rem 2.5rem;
+  font-size:.52rem;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  opacity:.85;
+}
+
+@media(max-width:900px){
+  .input-layout{grid-template-columns:1fr}
+  .metrics-strip{grid-template-columns:1fr 1fr;border-right:2px solid var(--ink)}
+  .metric{border-right:2px solid var(--ink);border-bottom:2px solid var(--ink)}
+  .results-body{grid-template-columns:1fr}
+  .results-full{grid-column:auto}
+  main{padding:1.25rem}
+  header{grid-template-columns:1fr}
+  .header-brand{border-right:none;border-bottom:2px solid var(--ink)}
+  .debt-card{grid-template-columns:1fr 1fr}
+  .page-body{grid-template-columns:1fr}
+  .sidebar{display:none}
+}
 </style>
 </head>
 <body>
 <div class="shell">
+
+  <!-- Header -->
   <header>
-    <div>
-      <div class="logo">Debt<span>Zero</span></div>
-      <div class="logo-sub">AI Debt Strategy Engine</div>
+    <div class="header-brand">
+      <div class="logo">Debt<em>Zero</em></div>
+      <div class="logo-tagline">AI-Verified Debt Strategy Engine</div>
     </div>
-    <div class="og-badge">
-      <div class="og-dot"></div>
-      Powered by OpenGradient TEE
+    <div class="header-meta">
+      <div class="og-badge">
+        <div class="og-dot"></div>
+        OpenGradient TEE · On-Chain Verified
+      </div>
     </div>
   </header>
 
+  <div class="issue-bar">
+    <span>Vol. I</span>
+    <span>Financial Independence Edition</span>
+    <span>Powered by AI</span>
+  </div>
+
+  <!-- Page body with sidebars -->
+  <div class="page-body">
+
+  <!-- LEFT SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-header">Live Rate Index <span class="blink">_</span></div>
+    <div class="ticker-wrap">
+      <div class="ticker-inner" id="ticker-left"></div>
+    </div>
+  </aside>
+
+  <!-- Main -->
   <main>
     <div class="vp s0" id="vp">
 
       <!-- Panel 0: Input -->
       <div class="panel" id="p0">
-        <div style="margin-bottom:2rem">
-          <h1 style="font-size:2.2rem;font-weight:800;letter-spacing:-.04em;margin-bottom:.5rem">
-            Build your <span style="color:var(--green)">debt-free</span> roadmap
+
+        <div class="hero">
+          <h1>
+            Destroy your debt.
+            <em>Intelligently.</em>
           </h1>
-          <p style="font-family:'DM Mono',monospace;font-size:.72rem;color:var(--text2);line-height:1.7;max-width:560px">
-            Enter your debts and income. Our AI calculates the optimal repayment strategy — 
-            mathematically verified on-chain so you know the numbers haven't been tampered with.
-          </p>
+          <p class="hero-sub">Enter your debts and monthly budget. Our AI calculates the mathematically optimal repayment strategy — verified on-chain so the numbers are never tampered with.</p>
         </div>
 
-        <div class="input-grid">
-          <!-- Left: Income + Goal -->
-          <div>
-            <div class="section-label">Your finances</div>
-            <div class="income-grid">
-              <div class="field">
-                <label>Monthly income ($)</label>
-                <input type="number" id="income" placeholder="5000" min="0">
-              </div>
-              <div class="field">
-                <label>Monthly for debt ($)</label>
-                <input type="number" id="monthly-payment" placeholder="800" min="0">
+        <div class="input-layout">
+
+          <!-- Left: Finances + Goal -->
+          <div class="left-col">
+            <div class="section-label">Your Finances</div>
+            <div class="finance-box">
+              <div class="finance-box-header">Monthly Budget Overview</div>
+              <div class="finance-box-body">
+                <div class="field">
+                  <label>Monthly income ($)</label>
+                  <input type="number" id="income" placeholder="5000" min="0">
+                </div>
+                <div class="field">
+                  <label>Available for debt ($)</label>
+                  <input type="number" id="monthly-payment" placeholder="800" min="0">
+                </div>
               </div>
             </div>
 
-            <div class="section-label">Your goal</div>
+            <div class="section-label">Repayment Philosophy</div>
             <div class="goal-grid">
               <button class="goal-btn on" data-goal="fastest" onclick="selectGoal(this)">
                 <span class="goal-icon">⚡</span>
                 <span class="goal-name">Fastest</span>
-                <span class="goal-desc">Pay off ASAP</span>
+                <span class="goal-desc">Minimum interest</span>
               </button>
               <button class="goal-btn" data-goal="balanced" onclick="selectGoal(this)">
                 <span class="goal-icon">⚖️</span>
                 <span class="goal-name">Balanced</span>
-                <span class="goal-desc">Speed vs comfort</span>
+                <span class="goal-desc">Speed + comfort</span>
               </button>
               <button class="goal-btn" data-goal="minimum_stress" onclick="selectGoal(this)">
-                <span class="goal-icon">🧘</span>
-                <span class="goal-name">Low stress</span>
+                <span class="goal-icon">🌿</span>
+                <span class="goal-name">Low Stress</span>
                 <span class="goal-desc">Small wins first</span>
               </button>
             </div>
           </div>
 
           <!-- Right: Debts -->
-          <div>
-            <div class="section-label">Your debts</div>
+          <div class="right-col">
+            <div class="section-label">Your Debts</div>
             <div class="debt-list" id="debt-list"></div>
-            <button class="add-debt" onclick="addDebt()">＋ Add debt</button>
+            <button class="add-debt" onclick="addDebt()">＋ Add another debt</button>
           </div>
+
         </div>
 
         <div class="cta-row">
           <button class="btn-analyze" id="btn-analyze" onclick="analyze()">
             <span>Calculate Strategy</span>
-            <span>→</span>
+            <span class="arrow">→</span>
           </button>
         </div>
+
       </div>
 
       <!-- Panel 1: Results -->
       <div class="panel" id="p1" style="display:none">
-        <div class="results-header" style="display:flex;align-items:flex-start;justify-content:space-between">
+        <div class="results-header">
           <div>
-            <div class="results-title" id="r-title">Your Debt-Free Plan</div>
-            <div class="results-sub" id="r-sub">AI-verified repayment strategy</div>
+            <div class="results-headline" id="r-title">Your <em>Debt-Free</em> Roadmap</div>
+            <div class="results-meta" id="r-sub">AI-verified repayment strategy · OpenGradient TEE</div>
           </div>
-          <button class="back-btn" onclick="goBack()">← New calculation</button>
+          <button class="back-btn" onclick="goBack()">← New Calculation</button>
         </div>
 
-        <div class="metrics-row" id="metrics-row">
+        <div class="metrics-strip" id="metrics-row">
           <div class="metric" id="m0">
-            <div class="metric-val green" id="m-freedom">—</div>
+            <div class="metric-val teal" id="m-freedom">—</div>
             <div class="metric-label">Months to freedom</div>
+            <div class="metric-accent"></div>
           </div>
           <div class="metric" id="m1">
             <div class="metric-val red" id="m-interest">—</div>
-            <div class="metric-label">Total interest saved</div>
+            <div class="metric-label">Interest saved</div>
+            <div class="metric-accent"></div>
           </div>
           <div class="metric" id="m2">
-            <div class="metric-val yellow" id="m-total">—</div>
+            <div class="metric-val ochre" id="m-total">—</div>
             <div class="metric-label">Total debt</div>
+            <div class="metric-accent"></div>
           </div>
           <div class="metric" id="m3">
             <div class="metric-val" id="m-payment">—</div>
             <div class="metric-label">Monthly payment</div>
+            <div class="metric-accent"></div>
           </div>
           <div class="metric" id="m4">
-            <div class="metric-val green" id="m-strategy">—</div>
+            <div class="metric-val teal" id="m-strategy">—</div>
             <div class="metric-label">Recommended strategy</div>
+            <div class="metric-accent"></div>
           </div>
         </div>
 
@@ -282,16 +1003,32 @@ canvas{width:100%;height:180px}
 
     </div>
   </main>
+
+  <!-- RIGHT SIDEBAR -->
+  <aside class="sidebar sidebar-right">
+    <div class="sidebar-header">Strategy Intel <span class="blink">_</span></div>
+    <div class="ticker-wrap">
+      <div class="ticker-inner" id="ticker-right"></div>
+    </div>
+  </aside>
+
+  </div><!-- /page-body -->
+
+  <div class="footer-strip">
+    <span>DebtZero AI Strategy Engine</span>
+    <span>Mathematically verified · On-chain proof available</span>
+  </div>
 </div>
 
-<!-- Loading -->
+<!-- Loading overlay -->
 <div class="loading-ov" id="loading-ov">
-  <div class="loading-ring"></div>
+  <div class="loading-graphic"></div>
+  <div class="loading-title">Calculating your strategy…</div>
   <div class="loading-steps">
-    <div class="loading-step" id="ls0">Connecting to OpenGradient TEE...</div>
-    <div class="loading-step" id="ls1">Analyzing debt structure...</div>
-    <div class="loading-step" id="ls2">Running avalanche vs snowball simulation...</div>
-    <div class="loading-step" id="ls3">Generating verified repayment plan...</div>
+    <div class="loading-step" id="ls0">Connecting to OpenGradient TEE</div>
+    <div class="loading-step" id="ls1">Analyzing debt structure</div>
+    <div class="loading-step" id="ls2">Running avalanche vs snowball simulation</div>
+    <div class="loading-step" id="ls3">Generating verified repayment plan</div>
   </div>
 </div>
 
@@ -300,9 +1037,8 @@ const API = '';
 let selectedGoal = 'fastest';
 let debtCount = 0;
 let analysisData = null;
-let chartInstance = null;
+let stepInterval;
 
-// ── Init ──────────────────────────────────────────────────────────────────────
 function init() {
   addDebt('Credit Card', 5000, 22.99, 100);
   addDebt('Car Loan', 12000, 6.5, 280);
@@ -320,6 +1056,7 @@ function addDebt(name='', balance='', rate='', min='') {
   const div = document.createElement('div');
   div.className = 'debt-card';
   div.id = `debt-${id}`;
+  div.setAttribute('data-n', `DEBT #${id}`);
   div.innerHTML = `
     <div class="field"><label>Name</label><input type="text" placeholder="Credit Card" value="${name}" id="dn-${id}"></div>
     <div class="field"><label>Balance ($)</label><input type="number" placeholder="5000" value="${balance}" min="0" id="db-${id}"></div>
@@ -348,25 +1085,20 @@ function getDebts() {
   return debts;
 }
 
-// ── Animate loading steps ─────────────────────────────────────────────────────
-let stepInterval;
 function startLoadingAnimation() {
   let step = 0;
   const steps = ['ls0','ls1','ls2','ls3'];
-  steps.forEach(s => document.getElementById(s).className = 'loading-step');
+  steps.forEach(s => { document.getElementById(s).className = 'loading-step'; });
   document.getElementById(steps[0]).className = 'loading-step active';
   stepInterval = setInterval(() => {
     document.getElementById(steps[step]).className = 'loading-step done';
     step++;
     if (step < steps.length) {
       document.getElementById(steps[step]).className = 'loading-step active';
-    } else {
-      clearInterval(stepInterval);
-    }
+    } else clearInterval(stepInterval);
   }, 8000);
 }
 
-// ── Analyze ───────────────────────────────────────────────────────────────────
 async function analyze() {
   const debts = getDebts();
   if (!debts.length) { alert('Add at least one debt'); return; }
@@ -383,8 +1115,8 @@ async function analyze() {
     const controller = new AbortController();
     const tid = setTimeout(() => controller.abort(), 270000);
     const res = await fetch(API + '/analyze', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
       body: JSON.stringify({debts, income, monthly_payment: monthly, goal: selectedGoal}),
       signal: controller.signal
     });
@@ -398,7 +1130,13 @@ async function analyze() {
     document.getElementById('loading-ov').classList.remove('vis');
     clearInterval(stepInterval);
     document.getElementById('p1').style.display = 'block';
-    document.getElementById('p1').innerHTML += `<div class="error-msg">⚠ ${e.name==='AbortError'?'Request timed out — server may be initializing, please retry':e.message}<br><br><button onclick="goBack()" style="margin-top:12px;padding:8px 20px;border-radius:8px;background:var(--green);color:#000;border:none;cursor:pointer;font-family:Syne,sans-serif;font-weight:700">← Try again</button></div>`;
+    document.getElementById('results-body').innerHTML = `
+      <div class="error-msg results-full">
+        <strong>Something went wrong.</strong>
+        ${e.name==='AbortError' ? 'Request timed out — server may be initializing, please retry.' : e.message}
+        <br><br>
+        <button onclick="goBack()" style="margin-top:12px;padding:10px 24px;background:var(--ochre);border:2px solid var(--ink);color:#fff;cursor:pointer;font-family:'Space Mono',monospace;font-size:.7rem;box-shadow:var(--shadow);letter-spacing:.08em">← Try Again</button>
+      </div>`;
     document.getElementById('vp').className = 'vp s1';
   } finally {
     btn.disabled = false;
@@ -420,101 +1158,130 @@ function renderResults(d) {
   document.getElementById('m-total').textContent = fmt(d.total_debt||0);
   document.getElementById('m-payment').textContent = fmt(d.monthly_payment_available||0);
   document.getElementById('m-strategy').textContent = (d.strategy||'avalanche').toUpperCase();
-
   ['m0','m1','m2','m3','m4'].forEach((id,i) => {
-    setTimeout(() => document.getElementById(id)?.classList.add('in'), i * 100);
+    setTimeout(() => document.getElementById(id)?.classList.add('in'), i * 120);
   });
 
-  // Summary
   const isAvalanche = (d.strategy||'').toLowerCase() === 'avalanche';
-
   const body = document.getElementById('results-body');
   body.innerHTML = '';
+  const totalBalance = (d.payment_schedule||[]).reduce((s,p) => s+(p.balance||0),0) || 1;
 
-  // Chart
+  // Chart card
   const chartCard = document.createElement('div');
-  chartCard.className = 'chart-card results-full';
+  chartCard.className = 'card results-full';
   chartCard.innerHTML = `
-    <div class="chart-title">
-      Debt Payoff Progress
-      <div class="chart-legend">
-        <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>${isAvalanche?'Avalanche (recommended)':'Snowball (recommended)'}</div>
-        <div class="legend-item"><div class="legend-dot" style="background:rgba(255,255,255,.2)"></div>${isAvalanche?'Snowball':'Avalanche'}</div>
+    <div class="card-header">
+      Debt Payoff Curve
+      <div style="display:flex;gap:1.25rem;align-items:center">
+        <span style="display:flex;align-items:center;gap:.35rem">
+          <span style="display:inline-block;width:20px;height:2px;background:var(--ochre)"></span>
+          <span style="font-size:.55rem;letter-spacing:.08em">${isAvalanche?'AVALANCHE (REC.)':'SNOWBALL (REC.)'}</span>
+        </span>
       </div>
     </div>
-    <canvas id="debt-chart"></canvas>
+    <div class="card-body" style="padding:.75rem 1.25rem 1.25rem">
+      <canvas id="debt-chart"></canvas>
+    </div>
   `;
   body.appendChild(chartCard);
 
   // Priority list
   const prioCard = document.createElement('div');
-  prioCard.className = 'chart-card';
-  const totalBalance = (d.payment_schedule||[]).reduce((s,p) => s + (p.balance||0), 0) || 1;
+  prioCard.className = 'card';
   prioCard.innerHTML = `
-    <div class="chart-title">Payoff Order — ${(d.strategy||'').toUpperCase()}</div>
-    <div class="priority-list">
-      ${(d.payment_schedule||[]).map(p => `
-        <div class="priority-item">
-          <div class="priority-num">${p.priority}</div>
-          <div class="priority-info">
-            <div class="pi-name">${p.debt_name}</div>
-            <div class="pi-meta">${p.rate}% APR · Min ${fmt(p.min_payment)}/mo · Pay ${fmt(p.recommended_payment)}/mo</div>
-            <div class="progress-bar"><div class="progress-fill" style="width:${Math.round((1-p.balance/totalBalance)*100)}%"></div></div>
+    <div class="card-header">Payoff Order — ${(d.strategy||'').toUpperCase()} METHOD</div>
+    <div class="card-body">
+      <div class="priority-list">
+        ${(d.payment_schedule||[]).map(p => `
+          <div class="priority-item">
+            <div class="priority-num">${p.priority}</div>
+            <div>
+              <div class="pi-name">${p.debt_name}</div>
+              <div class="pi-meta">${p.rate}% APR · Min ${fmt(p.min_payment)}/mo · Pay ${fmt(p.recommended_payment)}/mo</div>
+              <div class="progress-bar" style="margin-top:.5rem">
+                <div class="progress-fill" style="width:${Math.round((1-p.balance/totalBalance)*100)}%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="pr-payoff">Month ${p.payoff_month}</div>
+              <div class="pr-interest">+${fmt(p.total_interest)} interest</div>
+            </div>
           </div>
-          <div class="priority-right">
-            <div class="pr-payoff">Month ${p.payoff_month}</div>
-            <div class="pr-interest">+${fmt(p.total_interest)} interest</div>
-          </div>
-        </div>
-      `).join('')}
+        `).join('')}
+      </div>
     </div>
   `;
   body.appendChild(prioCard);
 
   // Compare card
   const cmpCard = document.createElement('div');
-  cmpCard.className = 'compare-card';
+  cmpCard.className = 'card';
   cmpCard.innerHTML = `
-    <div class="chart-title">Strategy Comparison</div>
-    <div class="compare-row">
-      <div class="compare-col ${isAvalanche?'winner':''}">
-        <div class="compare-col-title">⚡ Avalanche ${isAvalanche?'<span class="winner-badge">RECOMMENDED</span>':''}</div>
-        <div class="compare-stat"><span class="compare-stat-label">Total interest</span><span class="compare-stat-val" style="color:var(--green)">${fmt(d.total_interest_avalanche||0)}</span></div>
-        <div class="compare-stat"><span class="compare-stat-label">Months to payoff</span><span class="compare-stat-val">${d.months_to_freedom_avalanche||'—'}</span></div>
-        <div class="compare-stat"><span class="compare-stat-label">Method</span><span class="compare-stat-val" style="font-size:.6rem">Highest rate first</span></div>
+    <div class="card-header">Strategy Comparison</div>
+    <div class="card-body">
+      <div class="compare-cols">
+        <div class="compare-col ${isAvalanche?'winner':''}">
+          <div class="compare-col-title">⚡ Avalanche ${isAvalanche?'<span class="winner-badge">RECOMMENDED</span>':''}</div>
+          <div class="compare-stat">
+            <span class="compare-stat-label">Total interest</span>
+            <span class="compare-stat-val" style="color:var(--teal)">${fmt(d.total_interest_avalanche||0)}</span>
+          </div>
+          <div class="compare-stat">
+            <span class="compare-stat-label">Months</span>
+            <span class="compare-stat-val">${d.months_to_freedom_avalanche||'—'}</span>
+          </div>
+          <div class="compare-stat">
+            <span class="compare-stat-label">Method</span>
+            <span class="compare-stat-val" style="font-size:.6rem">Highest rate first</span>
+          </div>
+        </div>
+        <div class="compare-col ${!isAvalanche?'winner':''}">
+          <div class="compare-col-title">🏔 Snowball ${!isAvalanche?'<span class="winner-badge">RECOMMENDED</span>':''}</div>
+          <div class="compare-stat">
+            <span class="compare-stat-label">Total interest</span>
+            <span class="compare-stat-val" style="color:var(--ochre)">${fmt(d.total_interest_snowball||0)}</span>
+          </div>
+          <div class="compare-stat">
+            <span class="compare-stat-label">Months</span>
+            <span class="compare-stat-val">${d.months_to_freedom_snowball||'—'}</span>
+          </div>
+          <div class="compare-stat">
+            <span class="compare-stat-label">Method</span>
+            <span class="compare-stat-val" style="font-size:.6rem">Smallest balance first</span>
+          </div>
+        </div>
       </div>
-      <div class="compare-col ${!isAvalanche?'winner':''}">
-        <div class="compare-col-title">🏔 Snowball ${!isAvalanche?'<span class="winner-badge">RECOMMENDED</span>':''}</div>
-        <div class="compare-stat"><span class="compare-stat-label">Total interest</span><span class="compare-stat-val" style="color:var(--yellow)">${fmt(d.total_interest_snowball||0)}</span></div>
-        <div class="compare-stat"><span class="compare-stat-label">Months to payoff</span><span class="compare-stat-val">${d.months_to_freedom_snowball||'—'}</span></div>
-        <div class="compare-stat"><span class="compare-stat-label">Method</span><span class="compare-stat-val" style="font-size:.6rem">Smallest balance first</span></div>
-      </div>
+      <div class="strategy-reason">${d.strategy_reason||''}</div>
+      <div class="strategy-reason" style="margin-top:.5rem">${d.summary||''}</div>
+      ${d.proof?.transaction_hash ? `<a class="proof-link" href="${d.proof.explorer_url}" target="_blank">✓ On-chain proof · ${d.proof.transaction_hash.slice(0,12)}… ↗</a>` : ''}
     </div>
-    <p style="font-family:'DM Mono',monospace;font-size:.68rem;color:var(--text2);line-height:1.7;margin-top:.5rem">${d.strategy_reason||''}</p>
-    <p style="font-family:'DM Mono',monospace;font-size:.68rem;color:var(--text2);line-height:1.7;margin-top:.75rem">${d.summary||''}</p>
-    ${d.proof?.transaction_hash ? `<a class="proof-link" href="${d.proof.explorer_url}" target="_blank">✓ On-chain proof · ${d.proof.transaction_hash.slice(0,12)}... ↗</a>` : ''}
   `;
   body.appendChild(cmpCard);
 
   // Tips
   if ((d.tips||[]).length) {
     const tipsCard = document.createElement('div');
-    tipsCard.className = 'chart-card results-full';
+    tipsCard.className = 'card results-full';
     tipsCard.innerHTML = `
-      <div class="chart-title">💡 AI Recommendations</div>
-      <div class="tips-list">
-        ${d.tips.map(t => `<div class="tip-item"><span class="tip-icon">→</span><span>${t}</span></div>`).join('')}
+      <div class="card-header">AI Recommendations</div>
+      <div class="card-body">
+        <div class="tips-list">
+          ${d.tips.map((t,i) => `
+            <div class="tip-item">
+              <span class="tip-num">${i+1}.</span>
+              <span>${t}</span>
+            </div>
+          `).join('')}
+        </div>
       </div>
     `;
     body.appendChild(tipsCard);
   }
 
-  // Show panel
   document.getElementById('p1').style.display = 'block';
   document.getElementById('vp').className = 'vp s1';
-
-  // Draw chart after render
-  setTimeout(() => drawChart(d), 100);
+  setTimeout(() => drawChart(d), 120);
 }
 
 function drawChart(d) {
@@ -522,20 +1289,25 @@ function drawChart(d) {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const W = canvas.offsetWidth;
-  const H = 180;
-  canvas.width = W;
-  canvas.height = H;
+  const H = 200;
+  canvas.width = W * devicePixelRatio;
+  canvas.height = H * devicePixelRatio;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(devicePixelRatio, devicePixelRatio);
 
   const breakdown = d.monthly_breakdown || [];
   if (!breakdown.length) return;
-
   const maxDebt = d.total_debt || 1;
+  const months = d.months_to_freedom_avalanche || 1;
+
   const points = breakdown.map(b => ({
-    x: b.month / (d.months_to_freedom_avalanche || 1),
+    month: b.month,
+    x: b.month / months,
     y: b.total_remaining / maxDebt
   }));
 
-  const pad = {l:10, r:10, t:10, b:30};
+  const pad = {l:48, r:16, t:16, b:40};
   const cW = W - pad.l - pad.r;
   const cH = H - pad.t - pad.b;
 
@@ -543,57 +1315,72 @@ function drawChart(d) {
     return {x: pad.l + p.x * cW, y: pad.t + (1 - p.y) * cH};
   }
 
-  ctx.clearRect(0,0,W,H);
+  ctx.clearRect(0, 0, W, H);
+
+  // Paper background
+  ctx.fillStyle = '#f5f0e8';
+  ctx.fillRect(0, 0, W, H);
 
   // Grid lines
-  ctx.strokeStyle = 'rgba(0,255,136,0.05)';
-  ctx.lineWidth = 1;
-  for (let i=0;i<=4;i++) {
-    const y = pad.t + (i/4)*cH;
-    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l+cW, y); ctx.stroke();
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (i/4) * cH;
+    ctx.beginPath();
+    ctx.moveTo(pad.l, y);
+    ctx.lineTo(pad.l + cW, y);
+    ctx.strokeStyle = i === 4 ? 'rgba(26,20,16,0.25)' : 'rgba(26,20,16,0.08)';
+    ctx.lineWidth = i === 4 ? 1 : .5;
+    ctx.stroke();
+    // Y labels
+    const val = maxDebt * (1 - i/4);
+    ctx.fillStyle = 'rgba(122,111,97,0.8)';
+    ctx.font = `10px 'Space Mono', monospace`;
+    ctx.textAlign = 'right';
+    ctx.fillText('$' + Math.round(val/1000) + 'k', pad.l - 6, y + 4);
   }
 
-  // Avalanche line
-  const grad = ctx.createLinearGradient(0,0,0,H);
-  grad.addColorStop(0,'rgba(0,255,136,0.3)');
-  grad.addColorStop(1,'rgba(0,255,136,0)');
+  // Fill gradient
+  const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + cH);
+  grad.addColorStop(0, 'rgba(200,134,10,0.25)');
+  grad.addColorStop(1, 'rgba(200,134,10,0.02)');
 
   ctx.beginPath();
-  points.forEach((p,i) => {
-    const {x,y} = px(p);
-    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  points.forEach((p, i) => {
+    const {x, y} = px(p);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
   });
-  ctx.lineTo(px(points[points.length-1]).x, pad.t+cH);
-  ctx.lineTo(px(points[0]).x, pad.t+cH);
+  ctx.lineTo(px(points[points.length-1]).x, pad.t + cH);
+  ctx.lineTo(px(points[0]).x, pad.t + cH);
   ctx.closePath();
   ctx.fillStyle = grad;
   ctx.fill();
 
+  // Line
   ctx.beginPath();
-  points.forEach((p,i) => {
-    const {x,y} = px(p);
-    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  points.forEach((p, i) => {
+    const {x, y} = px(p);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
   });
-  ctx.strokeStyle = '#00ff88';
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = '#c8860a';
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
   ctx.stroke();
 
-  // Dots
-  points.forEach(p => {
-    const {x,y} = px(p);
-    ctx.beginPath();
-    ctx.arc(x,y,3,0,Math.PI*2);
-    ctx.fillStyle = '#00ff88';
-    ctx.fill();
-  });
-
-  // Labels
-  ctx.fillStyle = 'rgba(107,143,122,0.8)';
-  ctx.font = '10px DM Mono, monospace';
+  // Dots + labels
   ctx.textAlign = 'center';
-  points.forEach(p => {
-    const {x} = px(p);
-    ctx.fillText('mo '+p.month||'', x, H-8);
+  points.forEach((p, i) => {
+    const {x, y} = px(p);
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI*2);
+    ctx.fillStyle = '#c8860a';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x, y, 2.5, 0, Math.PI*2);
+    ctx.fillStyle = '#f5f0e8';
+    ctx.fill();
+    // X label
+    ctx.fillStyle = 'rgba(122,111,97,0.85)';
+    ctx.font = `10px 'Space Mono', monospace`;
+    ctx.fillText('mo ' + p.month, x, H - pad.b + 16);
   });
 }
 
@@ -602,7 +1389,132 @@ function goBack() {
   document.getElementById('results-body').innerHTML = '';
 }
 
+// ── Sidebar data ──────────────────────────────────────────────────────────────
+
+function makeSpark(vals, color) {
+  const w = 120, h = 22;
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const range = max - min || 1;
+  const pts = vals.map((v, i) => {
+    const x = (i / (vals.length - 1)) * w;
+    const y = h - ((v - min) / range) * (h - 2) - 1;
+    return `${x},${y}`;
+  }).join(' ');
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+function buildLeftSidebar() {
+  const rates = [
+    { label: 'Fed Funds Rate', val: '5.33%', change: '+0.00', dir: 'up', spark: [5.08,5.25,5.33,5.33,5.33,5.33,5.25,5.33] },
+    { label: 'Prime Rate', val: '8.50%', change: '+0.00', dir: 'up', spark: [7.5,8.0,8.25,8.5,8.5,8.5,8.5,8.5] },
+    { label: 'Avg CC APR', val: '21.76%', change: '+0.42', dir: 'dn', spark: [18.4,19.1,20.2,20.9,21.1,21.5,21.76,21.76] },
+    { label: 'Auto Loan 60mo', val: '7.18%', change: '-0.12', dir: 'up', spark: [5.9,6.2,6.8,7.0,7.2,7.18,7.15,7.18] },
+    { label: 'Personal Loan', val: '12.35%', change: '+0.08', dir: 'dn', spark: [10.1,10.8,11.5,11.9,12.1,12.35,12.35,12.35] },
+    { label: 'Student Loan', val: '6.54%', change: '+0.00', dir: 'up', spark: [5.5,5.5,6.0,6.54,6.54,6.54,6.54,6.54] },
+    { label: 'Mortgage 30yr', val: '6.87%', change: '-0.05', dir: 'up', spark: [7.5,7.2,7.0,6.9,6.87,6.87,6.88,6.87] },
+    { label: 'HELOC Avg', val: '9.25%', change: '+0.10', dir: 'dn', spark: [8.0,8.5,8.9,9.1,9.25,9.3,9.25,9.25] },
+    { label: 'Inflation CPI', val: '3.2%', change: '-0.1', dir: 'up', spark: [8.5,6.4,5.0,4.0,3.7,3.2,3.2,3.2] },
+    { label: '10yr Treasury', val: '4.52%', change: '+0.03', dir: 'up', spark: [3.8,4.0,4.2,4.35,4.5,4.52,4.5,4.52] },
+  ];
+
+  const counters = [
+    { num: '$1.13T', lbl: 'US Credit Card Debt' },
+    { num: '44M', lbl: 'Americans w/ Student Loans' },
+    { num: '$57K', lbl: 'Avg Household Debt' },
+  ];
+
+  let html = '';
+
+  // Counters first
+  counters.forEach(c => {
+    html += `<div class="counter-block">
+      <div class="counter-num">${c.num}</div>
+      <div class="counter-lbl">${c.lbl}</div>
+    </div>`;
+  });
+
+  // Rate meters
+  rates.forEach(r => {
+    const pct = parseFloat(r.val) / 25 * 100;
+    const color = r.dir === 'up' ? '#1a6b6b' : '#c0392b';
+    html += `<div class="ticker-item">
+      <div class="ticker-label">${r.label}</div>
+      <div class="ticker-val">${r.val}</div>
+      <div class="ticker-change ${r.dir}">${r.change}%</div>
+      <div class="spark-row">${makeSpark(r.spark, color)}</div>
+    </div>`;
+  });
+
+  // Repeat for infinite scroll
+  return html + html;
+}
+
+function buildRightSidebar() {
+  const wisdom = [
+    { icon: '⚡', text: 'Avalanche saves the most money. Attack your highest APR debt first — always.' },
+    { icon: '❄️', text: 'Snowball builds momentum. Clearing small balances fast keeps you motivated.' },
+    { icon: '📐', text: 'Even $50 extra per month can cut years off your debt payoff timeline.' },
+    { icon: '🔄', text: 'Balance transfers to 0% APR can save thousands — watch for transfer fees.' },
+    { icon: '🛡️', text: 'Build a $1,000 emergency fund first. Without it, any setback adds more debt.' },
+    { icon: '📊', text: 'Your debt-to-income ratio should stay below 36% for financial health.' },
+    { icon: '🧮', text: 'The avalanche method typically saves 8–12% more in interest than snowball.' },
+    { icon: '💳', text: 'Never miss a minimum payment. Late fees and penalty APR compound quickly.' },
+    { icon: '🎯', text: 'Automate your payments. Consistency beats strategy every single time.' },
+    { icon: '📈', text: 'Once debt-free, redirect your monthly payments directly into investments.' },
+  ];
+
+  const facts = [
+    { num: '78%', txt: 'of Americans live paycheck to paycheck' },
+    { num: '12yrs', txt: 'average time to pay off student loans' },
+    { num: '3×', txt: 'more interest paid with minimum payments only' },
+    { num: '$6K', txt: 'average US credit card balance' },
+  ];
+
+  const quotes = [
+    { text: 'A man in debt is so far a slave.', attr: '— Ralph Waldo Emerson' },
+    { text: 'The borrower is servant to the lender.', attr: '— Proverbs 22:7' },
+    { text: 'Debt is the slavery of the free.', attr: '— Publilius Syrus' },
+    { text: 'Before borrowing money from a friend, decide which you need more.', attr: '— Addison Hallock' },
+  ];
+
+  let html = '';
+
+  facts.forEach(f => {
+    html += `<div class="fact-tape">
+      <div class="fact-num">${f.num}</div>
+      <div class="fact-txt">${f.txt}</div>
+    </div>`;
+  });
+
+  wisdom.forEach(w => {
+    html += `<div class="wisdom-item">
+      <span class="wisdom-icon">${w.icon}</span>
+      ${w.text}
+    </div>`;
+  });
+
+  quotes.forEach(q => {
+    html += `<div class="sidebar-quote">${q.text}<div class="quote-attr">${q.attr}</div></div>`;
+  });
+
+  return html + html;
+}
+
+function initSidebars() {
+  const left = document.getElementById('ticker-left');
+  const right = document.getElementById('ticker-right');
+  if (left) left.innerHTML = buildLeftSidebar();
+  if (right) right.innerHTML = buildRightSidebar();
+
+  // Randomize animation start offsets so they don't scroll in sync
+  if (left) left.style.animationDuration = '52s';
+  if (right) right.style.animationDuration = '44s';
+}
+
 init();
+initSidebars();
 </script>
 </body>
 </html>
