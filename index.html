@@ -303,10 +303,10 @@ header{
 .issue-bar span{opacity:.45}
 
 /* ── Main ── */
-main{flex:1;padding:2.5rem;min-width:0;overflow:hidden}
+main{display:flex;flex-direction:column;flex:1;padding:2.5rem;min-width:0;overflow:hidden}
 
 /* ── Slide viewport ── */
-.vp{display:flex;transition:transform .55s cubic-bezier(.77,0,.18,1);overflow:hidden}
+.vp{display:flex;width:100%;flex:1;transition:transform .55s cubic-bezier(.77,0,.18,1)}
 .vp.s0{transform:translateX(0)}
 .vp.s1{transform:translateX(-100%)}
 .panel{width:100%;flex-shrink:0;min-width:0}
