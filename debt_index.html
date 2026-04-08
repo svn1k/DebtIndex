@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DebtZero — AI Debt Strategy</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080c0f;
+  --bg2:#0d1317;
+  --card:#111820;
+  --card2:#162030;
+  --border:rgba(0,255,136,0.08);
+  --border2:rgba(0,255,136,0.18);
+  --text:#e8f5ee;
+  --text2:#6b8f7a;
+  --text3:#2a4a38;
+  --green:#00ff88;
+  --green2:#00cc6a;
+  --red:#ff4060;
+  --yellow:#ffcc00;
+  --blue:#00aaff;
+  --glow:rgba(0,255,136,0.12);
+  --shadow:0 2px 20px rgba(0,0,0,0.6);
+}
+html,body{height:100%;font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+
+/* ── Grid bg ── */
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;
+  background-image:linear-gradient(rgba(0,255,136,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,0.03) 1px,transparent 1px);
+  background-size:40px 40px;pointer-events:none
+}
+
+/* ── Layout ── */
+.shell{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}
+header{padding:1.5rem 3rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.logo{font-size:1.4rem;font-weight:800;letter-spacing:-.03em}
+.logo span{color:var(--green)}
+.logo-sub{font-family:'DM Mono',monospace;font-size:.55rem;color:var(--text3);letter-spacing:.15em;text-transform:uppercase;margin-top:2px}
+.og-badge{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--text3);letter-spacing:.1em;display:flex;align-items:center;gap:.4rem}
+.og-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+
+main{flex:1;padding:3rem;max-width:1300px;margin:0 auto;width:100%}
+
+/* ── Panels ── */
+.vp{display:flex;transition:transform .5s cubic-bezier(.77,0,.18,1)}
+.vp.s0{transform:translateX(0)}
+.vp.s1{transform:translateX(-100%)}
+.panel{width:100%;flex-shrink:0}
+
+/* ── Step 0: Input ── */
+.input-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:2rem}
+.section-label{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--green);letter-spacing:.2em;text-transform:uppercase;margin-bottom:1.25rem;display:flex;align-items:center;gap:.75rem}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.income-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:2rem}
+.field{display:flex;flex-direction:column;gap:.4rem}
+.field label{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text2);letter-spacing:.1em;text-transform:uppercase}
+.field input,.field select{background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:.85rem;padding:.65rem 1rem;outline:none;transition:border-color .15s;width:100%}
+.field input:focus,.field select:focus{border-color:var(--green);box-shadow:0 0 0 3px var(--glow)}
+.field input::placeholder{color:var(--text3)}
+.field select option{background:#111}
+
+/* ── Debt cards ── */
+.debt-list{display:flex;flex-direction:column;gap:.75rem;margin-bottom:1rem}
+.debt-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem 1.25rem;display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:.75rem;align-items:center;animation:slideIn .2s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.debt-card .field input{padding:.5rem .75rem;font-size:.78rem}
+.debt-rm{background:none;border:none;color:var(--text3);cursor:pointer;font-size:1.1rem;padding:.25rem;transition:color .15s;line-height:1}
+.debt-rm:hover{color:var(--red)}
+.add-debt{background:none;border:1px dashed var(--border2);border-radius:10px;color:var(--green);font-family:'DM Mono',monospace;font-size:.72rem;letter-spacing:.1em;padding:.75rem;width:100%;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:.5rem}
+.add-debt:hover{background:var(--glow);border-color:var(--green)}
+
+/* ── Goal selector ── */
+.goal-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.75rem;margin-bottom:2rem}
+.goal-btn{padding:.9rem;border:1px solid var(--border);border-radius:10px;background:rgba(0,0,0,.2);cursor:pointer;text-align:left;transition:all .18s}
+.goal-btn:hover{border-color:var(--border2)}
+.goal-btn.on{border-color:var(--green);background:var(--glow)}
+.goal-icon{font-size:1.3rem;display:block;margin-bottom:.35rem}
+.goal-name{font-size:.82rem;font-weight:600;color:var(--text);display:block}
+.goal-desc{font-size:.62rem;color:var(--text3);font-family:'DM Mono',monospace;margin-top:.2rem;display:block}
+
+/* ── CTA ── */
+.cta-row{display:flex;justify-content:flex-end;gap:1rem;margin-top:2rem}
+.btn-analyze{background:linear-gradient(135deg,var(--green2),var(--green));border:none;border-radius:10px;color:#000;font-family:'Syne',sans-serif;font-size:.88rem;font-weight:700;padding:.85rem 2.5rem;cursor:pointer;display:flex;align-items:center;gap:.6rem;transition:all .2s;letter-spacing:.02em}
+.btn-analyze:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(0,255,136,.25)}
+.btn-analyze:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+/* ── Loading ── */
+.loading-ov{position:fixed;inset:0;z-index:100;background:rgba(8,12,15,.92);backdrop-filter:blur(8px);display:none;flex-direction:column;align-items:center;justify-content:center;gap:1.5rem}
+.loading-ov.vis{display:flex}
+.loading-ring{width:60px;height:60px;border:2px solid var(--border2);border-top-color:var(--green);border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-steps{display:flex;flex-direction:column;gap:.5rem;align-items:center}
+.loading-step{font-family:'DM Mono',monospace;font-size:.7rem;color:var(--text3);transition:color .3s}
+.loading-step.active{color:var(--green)}
+.loading-step.done{color:var(--text2)}
+
+/* ── Results ── */
+.results-header{margin-bottom:2rem}
+.results-title{font-size:1.8rem;font-weight:800;letter-spacing:-.03em;margin-bottom:.4rem}
+.results-sub{font-family:'DM Mono',monospace;font-size:.65rem;color:var(--text2);letter-spacing:.08em}
+
+.metrics-row{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:2rem}
+.metric{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;position:relative;overflow:hidden}
+.metric::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);opacity:0;transition:opacity .3s}
+.metric.in::before{opacity:1}
+.metric-val{font-family:'DM Mono',monospace;font-size:1.5rem;font-weight:500;margin-bottom:.3rem}
+.metric-val.green{color:var(--green)}
+.metric-val.red{color:var(--red)}
+.metric-val.yellow{color:var(--yellow)}
+.metric-label{font-size:.62rem;color:var(--text2);font-family:'DM Mono',monospace;letter-spacing:.08em;text-transform:uppercase}
+
+.results-body{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+.results-full{grid-column:1/-1}
+
+/* ── Chart ── */
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem}
+.chart-title{font-size:.8rem;font-weight:600;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between}
+.chart-legend{display:flex;gap:1rem}
+.legend-item{font-family:'DM Mono',monospace;font-size:.58rem;color:var(--text2);display:flex;align-items:center;gap:.35rem}
+.legend-dot{width:8px;height:8px;border-radius:50%}
+canvas{width:100%;height:180px}
+
+/* ── Debt priority list ── */
+.priority-list{display:flex;flex-direction:column;gap:.6rem}
+.priority-item{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;display:grid;grid-template-columns:auto 1fr auto;gap:1rem;align-items:center;cursor:pointer;transition:all .15s}
+.priority-item:hover{border-color:var(--border2)}
+.priority-num{font-family:'DM Mono',monospace;font-size:1.1rem;font-weight:500;color:var(--green);width:28px;text-align:center}
+.priority-info .pi-name{font-size:.88rem;font-weight:600;margin-bottom:.2rem}
+.priority-info .pi-meta{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--text2)}
+.priority-right{text-align:right}
+.priority-right .pr-payoff{font-family:'DM Mono',monospace;font-size:.85rem;color:var(--green);margin-bottom:.2rem}
+.priority-right .pr-interest{font-family:'DM Mono',monospace;font-size:.62rem;color:var(--red)}
+.progress-bar{height:3px;background:rgba(0,255,136,.1);border-radius:2px;margin-top:.5rem;overflow:hidden;grid-column:1/-1}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--green2),var(--green));border-radius:2px;transition:width 1s ease}
+
+/* ── Strategy compare ── */
+.compare-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.5rem}
+.compare-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.compare-col{background:rgba(0,0,0,.3);border-radius:10px;padding:1rem;border:1px solid var(--border)}
+.compare-col.winner{border-color:var(--green);background:var(--glow)}
+.compare-col-title{font-size:.75rem;font-weight:700;margin-bottom:.75rem;display:flex;align-items:center;gap:.5rem}
+.winner-badge{background:var(--green);color:#000;font-family:'DM Mono',monospace;font-size:.5rem;padding:2px 6px;border-radius:4px;letter-spacing:.05em}
+.compare-stat{display:flex;justify-content:space-between;margin-bottom:.4rem}
+.compare-stat-label{font-family:'DM Mono',monospace;font-size:.6rem;color:var(--text2)}
+.compare-stat-val{font-family:'DM Mono',monospace;font-size:.7rem;font-weight:500}
+
+/* ── Tips ── */
+.tips-list{display:flex;flex-direction:column;gap:.5rem}
+.tip-item{display:flex;gap:.75rem;align-items:flex-start;padding:.6rem .9rem;background:rgba(0,255,136,.03);border:1px solid var(--border);border-radius:8px;font-size:.75rem;color:var(--text2);line-height:1.55}
+.tip-icon{color:var(--green);font-size:.8rem;flex-shrink:0;margin-top:1px}
+
+/* ── Proof ── */
+.proof-link{display:inline-flex;align-items:center;gap:.5rem;font-family:'DM Mono',monospace;font-size:.6rem;color:var(--green);text-decoration:none;padding:.4rem .8rem;border:1px solid var(--border2);border-radius:6px;margin-top:1rem;transition:all .15s}
+.proof-link:hover{background:var(--glow)}
+
+.back-btn{background:none;border:1px solid var(--border);border-radius:8px;color:var(--text2);font-family:'DM Mono',monospace;font-size:.65rem;padding:.5rem 1rem;cursor:pointer;display:flex;align-items:center;gap:.4rem;transition:all .15s;letter-spacing:.05em}
+.back-btn:hover{border-color:var(--border2);color:var(--text)}
+
+.error-msg{text-align:center;padding:3rem;color:var(--red);font-family:'DM Mono',monospace;font-size:.8rem}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div>
+      <div class="logo">Debt<span>Zero</span></div>
+      <div class="logo-sub">AI Debt Strategy Engine</div>
+    </div>
+    <div class="og-badge">
+      <div class="og-dot"></div>
+      Powered by OpenGradient TEE
+    </div>
+  </header>
+
+  <main>
+    <div class="vp s0" id="vp">
+
+      <!-- Panel 0: Input -->
+      <div class="panel" id="p0">
+        <div style="margin-bottom:2rem">
+          <h1 style="font-size:2.2rem;font-weight:800;letter-spacing:-.04em;margin-bottom:.5rem">
+            Build your <span style="color:var(--green)">debt-free</span> roadmap
+          </h1>
+          <p style="font-family:'DM Mono',monospace;font-size:.72rem;color:var(--text2);line-height:1.7;max-width:560px">
+            Enter your debts and income. Our AI calculates the optimal repayment strategy — 
+            mathematically verified on-chain so you know the numbers haven't been tampered with.
+          </p>
+        </div>
+
+        <div class="input-grid">
+          <!-- Left: Income + Goal -->
+          <div>
+            <div class="section-label">Your finances</div>
+            <div class="income-grid">
+              <div class="field">
+                <label>Monthly income ($)</label>
+                <input type="number" id="income" placeholder="5000" min="0">
+              </div>
+              <div class="field">
+                <label>Monthly for debt ($)</label>
+                <input type="number" id="monthly-payment" placeholder="800" min="0">
+              </div>
+            </div>
+
+            <div class="section-label">Your goal</div>
+            <div class="goal-grid">
+              <button class="goal-btn on" data-goal="fastest" onclick="selectGoal(this)">
+                <span class="goal-icon">⚡</span>
+                <span class="goal-name">Fastest</span>
+                <span class="goal-desc">Pay off ASAP</span>
+              </button>
+              <button class="goal-btn" data-goal="balanced" onclick="selectGoal(this)">
+                <span class="goal-icon">⚖️</span>
+                <span class="goal-name">Balanced</span>
+                <span class="goal-desc">Speed vs comfort</span>
+              </button>
+              <button class="goal-btn" data-goal="minimum_stress" onclick="selectGoal(this)">
+                <span class="goal-icon">🧘</span>
+                <span class="goal-name">Low stress</span>
+                <span class="goal-desc">Small wins first</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Right: Debts -->
+          <div>
+            <div class="section-label">Your debts</div>
+            <div class="debt-list" id="debt-list"></div>
+            <button class="add-debt" onclick="addDebt()">＋ Add debt</button>
+          </div>
+        </div>
+
+        <div class="cta-row">
+          <button class="btn-analyze" id="btn-analyze" onclick="analyze()">
+            <span>Calculate Strategy</span>
+            <span>→</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Panel 1: Results -->
+      <div class="panel" id="p1" style="display:none">
+        <div class="results-header" style="display:flex;align-items:flex-start;justify-content:space-between">
+          <div>
+            <div class="results-title" id="r-title">Your Debt-Free Plan</div>
+            <div class="results-sub" id="r-sub">AI-verified repayment strategy</div>
+          </div>
+          <button class="back-btn" onclick="goBack()">← New calculation</button>
+        </div>
+
+        <div class="metrics-row" id="metrics-row">
+          <div class="metric" id="m0">
+            <div class="metric-val green" id="m-freedom">—</div>
+            <div class="metric-label">Months to freedom</div>
+          </div>
+          <div class="metric" id="m1">
+            <div class="metric-val red" id="m-interest">—</div>
+            <div class="metric-label">Total interest saved</div>
+          </div>
+          <div class="metric" id="m2">
+            <div class="metric-val yellow" id="m-total">—</div>
+            <div class="metric-label">Total debt</div>
+          </div>
+          <div class="metric" id="m3">
+            <div class="metric-val" id="m-payment">—</div>
+            <div class="metric-label">Monthly payment</div>
+          </div>
+          <div class="metric" id="m4">
+            <div class="metric-val green" id="m-strategy">—</div>
+            <div class="metric-label">Recommended strategy</div>
+          </div>
+        </div>
+
+        <div id="results-body" class="results-body"></div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- Loading -->
+<div class="loading-ov" id="loading-ov">
+  <div class="loading-ring"></div>
+  <div class="loading-steps">
+    <div class="loading-step" id="ls0">Connecting to OpenGradient TEE...</div>
+    <div class="loading-step" id="ls1">Analyzing debt structure...</div>
+    <div class="loading-step" id="ls2">Running avalanche vs snowball simulation...</div>
+    <div class="loading-step" id="ls3">Generating verified repayment plan...</div>
+  </div>
+</div>
+
+<script>
+const API = '';
+let selectedGoal = 'fastest';
+let debtCount = 0;
+let analysisData = null;
+let chartInstance = null;
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+function init() {
+  addDebt('Credit Card', 5000, 22.99, 100);
+  addDebt('Car Loan', 12000, 6.5, 280);
+}
+
+function selectGoal(btn) {
+  document.querySelectorAll('.goal-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  selectedGoal = btn.dataset.goal;
+}
+
+function addDebt(name='', balance='', rate='', min='') {
+  debtCount++;
+  const id = debtCount;
+  const div = document.createElement('div');
+  div.className = 'debt-card';
+  div.id = `debt-${id}`;
+  div.innerHTML = `
+    <div class="field"><label>Name</label><input type="text" placeholder="Credit Card" value="${name}" id="dn-${id}"></div>
+    <div class="field"><label>Balance ($)</label><input type="number" placeholder="5000" value="${balance}" min="0" id="db-${id}"></div>
+    <div class="field"><label>APR (%)</label><input type="number" placeholder="19.99" value="${rate}" step="0.01" min="0" id="dr-${id}"></div>
+    <div class="field"><label>Min payment ($)</label><input type="number" placeholder="100" value="${min}" min="0" id="dm-${id}"></div>
+    <button class="debt-rm" onclick="removeDebt(${id})" title="Remove">✕</button>
+  `;
+  document.getElementById('debt-list').appendChild(div);
+}
+
+function removeDebt(id) {
+  const el = document.getElementById(`debt-${id}`);
+  if (el) el.remove();
+}
+
+function getDebts() {
+  const debts = [];
+  document.querySelectorAll('.debt-card').forEach(card => {
+    const id = card.id.replace('debt-','');
+    const name = document.getElementById(`dn-${id}`)?.value || 'Debt';
+    const balance = parseFloat(document.getElementById(`db-${id}`)?.value) || 0;
+    const rate = parseFloat(document.getElementById(`dr-${id}`)?.value) || 0;
+    const min = parseFloat(document.getElementById(`dm-${id}`)?.value) || 0;
+    if (balance > 0) debts.push({name, balance, rate, min_payment: min});
+  });
+  return debts;
+}
+
+// ── Animate loading steps ─────────────────────────────────────────────────────
+let stepInterval;
+function startLoadingAnimation() {
+  let step = 0;
+  const steps = ['ls0','ls1','ls2','ls3'];
+  steps.forEach(s => document.getElementById(s).className = 'loading-step');
+  document.getElementById(steps[0]).className = 'loading-step active';
+  stepInterval = setInterval(() => {
+    document.getElementById(steps[step]).className = 'loading-step done';
+    step++;
+    if (step < steps.length) {
+      document.getElementById(steps[step]).className = 'loading-step active';
+    } else {
+      clearInterval(stepInterval);
+    }
+  }, 8000);
+}
+
+// ── Analyze ───────────────────────────────────────────────────────────────────
+async function analyze() {
+  const debts = getDebts();
+  if (!debts.length) { alert('Add at least one debt'); return; }
+  const income = parseFloat(document.getElementById('income').value) || 0;
+  const monthly = parseFloat(document.getElementById('monthly-payment').value) || 0;
+  if (!monthly) { alert('Enter monthly payment amount'); return; }
+
+  const btn = document.getElementById('btn-analyze');
+  btn.disabled = true;
+  document.getElementById('loading-ov').classList.add('vis');
+  startLoadingAnimation();
+
+  try {
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 270000);
+    const res = await fetch(API + '/analyze', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({debts, income, monthly_payment: monthly, goal: selectedGoal}),
+      signal: controller.signal
+    });
+    clearTimeout(tid);
+    if (!res.ok) throw new Error('Server error ' + res.status);
+    const d = await res.json();
+    if (d.error) throw new Error(d.error);
+    analysisData = d;
+    renderResults(d);
+  } catch(e) {
+    document.getElementById('loading-ov').classList.remove('vis');
+    clearInterval(stepInterval);
+    document.getElementById('p1').style.display = 'block';
+    document.getElementById('p1').innerHTML += `<div class="error-msg">⚠ ${e.name==='AbortError'?'Request timed out — server may be initializing, please retry':e.message}<br><br><button onclick="goBack()" style="margin-top:12px;padding:8px 20px;border-radius:8px;background:var(--green);color:#000;border:none;cursor:pointer;font-family:Syne,sans-serif;font-weight:700">← Try again</button></div>`;
+    document.getElementById('vp').className = 'vp s1';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function fmt(n) {
+  return '$' + Math.round(n).toLocaleString();
+}
+
+function renderResults(d) {
+  clearInterval(stepInterval);
+  document.getElementById('loading-ov').classList.remove('vis');
+
+  // Metrics
+  document.getElementById('m-freedom').textContent = (d.months_to_freedom_avalanche || '—') + ' mo';
+  const saved = (d.total_interest_snowball||0) - (d.total_interest_avalanche||0);
+  document.getElementById('m-interest').textContent = saved > 0 ? fmt(saved) : fmt(d.total_interest_avalanche||0);
+  document.getElementById('m-total').textContent = fmt(d.total_debt||0);
+  document.getElementById('m-payment').textContent = fmt(d.monthly_payment_available||0);
+  document.getElementById('m-strategy').textContent = (d.strategy||'avalanche').toUpperCase();
+
+  ['m0','m1','m2','m3','m4'].forEach((id,i) => {
+    setTimeout(() => document.getElementById(id)?.classList.add('in'), i * 100);
+  });
+
+  // Summary
+  const isAvalanche = (d.strategy||'').toLowerCase() === 'avalanche';
+
+  const body = document.getElementById('results-body');
+  body.innerHTML = '';
+
+  // Chart
+  const chartCard = document.createElement('div');
+  chartCard.className = 'chart-card results-full';
+  chartCard.innerHTML = `
+    <div class="chart-title">
+      Debt Payoff Progress
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>${isAvalanche?'Avalanche (recommended)':'Snowball (recommended)'}</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(255,255,255,.2)"></div>${isAvalanche?'Snowball':'Avalanche'}</div>
+      </div>
+    </div>
+    <canvas id="debt-chart"></canvas>
+  `;
+  body.appendChild(chartCard);
+
+  // Priority list
+  const prioCard = document.createElement('div');
+  prioCard.className = 'chart-card';
+  const totalBalance = (d.payment_schedule||[]).reduce((s,p) => s + (p.balance||0), 0) || 1;
+  prioCard.innerHTML = `
+    <div class="chart-title">Payoff Order — ${(d.strategy||'').toUpperCase()}</div>
+    <div class="priority-list">
+      ${(d.payment_schedule||[]).map(p => `
+        <div class="priority-item">
+          <div class="priority-num">${p.priority}</div>
+          <div class="priority-info">
+            <div class="pi-name">${p.debt_name}</div>
+            <div class="pi-meta">${p.rate}% APR · Min ${fmt(p.min_payment)}/mo · Pay ${fmt(p.recommended_payment)}/mo</div>
+            <div class="progress-bar"><div class="progress-fill" style="width:${Math.round((1-p.balance/totalBalance)*100)}%"></div></div>
+          </div>
+          <div class="priority-right">
+            <div class="pr-payoff">Month ${p.payoff_month}</div>
+            <div class="pr-interest">+${fmt(p.total_interest)} interest</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  body.appendChild(prioCard);
+
+  // Compare card
+  const cmpCard = document.createElement('div');
+  cmpCard.className = 'compare-card';
+  cmpCard.innerHTML = `
+    <div class="chart-title">Strategy Comparison</div>
+    <div class="compare-row">
+      <div class="compare-col ${isAvalanche?'winner':''}">
+        <div class="compare-col-title">⚡ Avalanche ${isAvalanche?'<span class="winner-badge">RECOMMENDED</span>':''}</div>
+        <div class="compare-stat"><span class="compare-stat-label">Total interest</span><span class="compare-stat-val" style="color:var(--green)">${fmt(d.total_interest_avalanche||0)}</span></div>
+        <div class="compare-stat"><span class="compare-stat-label">Months to payoff</span><span class="compare-stat-val">${d.months_to_freedom_avalanche||'—'}</span></div>
+        <div class="compare-stat"><span class="compare-stat-label">Method</span><span class="compare-stat-val" style="font-size:.6rem">Highest rate first</span></div>
+      </div>
+      <div class="compare-col ${!isAvalanche?'winner':''}">
+        <div class="compare-col-title">🏔 Snowball ${!isAvalanche?'<span class="winner-badge">RECOMMENDED</span>':''}</div>
+        <div class="compare-stat"><span class="compare-stat-label">Total interest</span><span class="compare-stat-val" style="color:var(--yellow)">${fmt(d.total_interest_snowball||0)}</span></div>
+        <div class="compare-stat"><span class="compare-stat-label">Months to payoff</span><span class="compare-stat-val">${d.months_to_freedom_snowball||'—'}</span></div>
+        <div class="compare-stat"><span class="compare-stat-label">Method</span><span class="compare-stat-val" style="font-size:.6rem">Smallest balance first</span></div>
+      </div>
+    </div>
+    <p style="font-family:'DM Mono',monospace;font-size:.68rem;color:var(--text2);line-height:1.7;margin-top:.5rem">${d.strategy_reason||''}</p>
+    <p style="font-family:'DM Mono',monospace;font-size:.68rem;color:var(--text2);line-height:1.7;margin-top:.75rem">${d.summary||''}</p>
+    ${d.proof?.transaction_hash ? `<a class="proof-link" href="${d.proof.explorer_url}" target="_blank">✓ On-chain proof · ${d.proof.transaction_hash.slice(0,12)}... ↗</a>` : ''}
+  `;
+  body.appendChild(cmpCard);
+
+  // Tips
+  if ((d.tips||[]).length) {
+    const tipsCard = document.createElement('div');
+    tipsCard.className = 'chart-card results-full';
+    tipsCard.innerHTML = `
+      <div class="chart-title">💡 AI Recommendations</div>
+      <div class="tips-list">
+        ${d.tips.map(t => `<div class="tip-item"><span class="tip-icon">→</span><span>${t}</span></div>`).join('')}
+      </div>
+    `;
+    body.appendChild(tipsCard);
+  }
+
+  // Show panel
+  document.getElementById('p1').style.display = 'block';
+  document.getElementById('vp').className = 'vp s1';
+
+  // Draw chart after render
+  setTimeout(() => drawChart(d), 100);
+}
+
+function drawChart(d) {
+  const canvas = document.getElementById('debt-chart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth;
+  const H = 180;
+  canvas.width = W;
+  canvas.height = H;
+
+  const breakdown = d.monthly_breakdown || [];
+  if (!breakdown.length) return;
+
+  const maxDebt = d.total_debt || 1;
+  const points = breakdown.map(b => ({
+    x: b.month / (d.months_to_freedom_avalanche || 1),
+    y: b.total_remaining / maxDebt
+  }));
+
+  const pad = {l:10, r:10, t:10, b:30};
+  const cW = W - pad.l - pad.r;
+  const cH = H - pad.t - pad.b;
+
+  function px(p) {
+    return {x: pad.l + p.x * cW, y: pad.t + (1 - p.y) * cH};
+  }
+
+  ctx.clearRect(0,0,W,H);
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(0,255,136,0.05)';
+  ctx.lineWidth = 1;
+  for (let i=0;i<=4;i++) {
+    const y = pad.t + (i/4)*cH;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l+cW, y); ctx.stroke();
+  }
+
+  // Avalanche line
+  const grad = ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,'rgba(0,255,136,0.3)');
+  grad.addColorStop(1,'rgba(0,255,136,0)');
+
+  ctx.beginPath();
+  points.forEach((p,i) => {
+    const {x,y} = px(p);
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.lineTo(px(points[points.length-1]).x, pad.t+cH);
+  ctx.lineTo(px(points[0]).x, pad.t+cH);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  ctx.beginPath();
+  points.forEach((p,i) => {
+    const {x,y} = px(p);
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  });
+  ctx.strokeStyle = '#00ff88';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Dots
+  points.forEach(p => {
+    const {x,y} = px(p);
+    ctx.beginPath();
+    ctx.arc(x,y,3,0,Math.PI*2);
+    ctx.fillStyle = '#00ff88';
+    ctx.fill();
+  });
+
+  // Labels
+  ctx.fillStyle = 'rgba(107,143,122,0.8)';
+  ctx.font = '10px DM Mono, monospace';
+  ctx.textAlign = 'center';
+  points.forEach(p => {
+    const {x} = px(p);
+    ctx.fillText('mo '+p.month||'', x, H-8);
+  });
+}
+
+function goBack() {
+  document.getElementById('vp').className = 'vp s0';
+  document.getElementById('results-body').innerHTML = '';
+}
+
+init();
+</script>
+</body>
+</html>
